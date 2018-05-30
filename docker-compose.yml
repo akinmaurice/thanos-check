@@ -1,0 +1,50 @@
+version: "3.3"
+services:
+    mongo:
+        container_name: mongo
+        image: mongo
+        ports:
+            - "27017:27017"
+        volumes:
+            - mongo-data:/data/db
+    api-service:
+        container_name: api-service
+        environment:
+            - NODE_ENV=${NODE_ENV}
+            - APP_DEV_MONGO_DB_URL=${APP_DEV_MONGO_DB_URL}
+            - APP_DEV_MAIL_SMTP_HOST=${APP_DEV_MAIL_SMTP_HOST}
+            - APP_DEV_MAIL_USER=${APP_DEV_MAIL_USER}
+            - APP_DEV_MAIL_PASS=${APP_DEV_MAIL_PASS}
+            - APP_DEV_MAIL_PORT=${APP_DEV_MAIL_PORT}
+            - PORT=${API_PORT}
+        restart: always
+        build: ./api
+        links:
+            - mongo
+        depends_on:
+            - mongo
+        ports:
+            - "3000:3000"
+    client-web-service:
+        container_name: client-web-service
+        environment:
+            - NODE_ENV=${NODE_ENV}
+            - API_DEV_URL=${API_URL}
+            - PORT=${CLIENT_PORT}
+        restart: always
+        build: ./client
+        depends_on:
+            - api-service
+    nginx:
+        container_name: nginx
+        image: nginx
+        volumes:
+            - ./nginx.conf:/etc/nginx/conf.d/nginx.conf
+        ports:
+            - "80:80"
+        depends_on:
+            - client-web-service
+        command: /bin/bash -c "envsubst < /etc/nginx/conf.d/nginx.conf > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+volumes:
+    mongo-data:
+

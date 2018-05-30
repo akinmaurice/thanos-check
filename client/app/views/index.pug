@@ -1,0 +1,9 @@
+extends layout
+
+block content
+  h1= title
+  - const status = response.response.status
+  if (!status)
+    p Thanos Killed You!
+  else
+    p You're Safe!
